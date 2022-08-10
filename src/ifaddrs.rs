@@ -42,11 +42,43 @@ cfg_if! {
     }
 }
 
+/// Workaround a bug in XNU where netmasks will always have the wrong size in
+/// the sa_len field due to the kernel ignoring trailing zeroes in the structure
+/// when setting the field. See https://github.com/nix-rust/nix/issues/1709#issuecomment-1199304470
+///
+/// To fix this, we overwrite `sa_len` to have the known (static) value of the
+/// structure.
+#[cfg(target_os = "macos")]
+fn workaround_xnu_bug(info: &libc::ifaddrs) {
+    let sock = info.ifa_netmask;
+    if sock.is_null() {
+        return
+    }
+    let family = unsafe {
+        (*sock).sa_family
+    };
+
+    let fixup_size = match i32::from(family) {
+        libc::AF_INET => std::mem::size_of::<libc::sockaddr_in>(),
+        libc::AF_INET6 => std::mem::size_of::<libc::sockaddr_in6>(),
+        _ => return
+    };
+
+    assert!(fixup_size < u8::MAX.into());
+    unsafe {
+        (*sock).sa_len = (*sock).sa_len.max(fixup_size as u8);
+    }
+}
+
 impl InterfaceAddress {
     /// Create an `InterfaceAddress` from the libc struct.
     fn from_libc_ifaddrs(info: &libc::ifaddrs) -> InterfaceAddress {
         let ifname = unsafe { ffi::CStr::from_ptr(info.ifa_name) };
         let address = unsafe { SockaddrStorage::from_raw(info.ifa_addr, None) };
+        #[cfg(target_os = "macos")]
+        {
+            workaround_xnu_bug(info)
+        }
         let netmask = unsafe { SockaddrStorage::from_raw(info.ifa_netmask, None) };
         let mut addr = InterfaceAddress {
             interface_name: ifname.to_string_lossy().to_string(),
@@ -143,5 +175,22 @@ mod tests {
     #[test]
     fn test_getifaddrs() {
         let _ = getifaddrs();
+    }
+
+    #[test]
+    fn test_getifaddrs_netmask_correct() {
+        let addrs = getifaddrs().unwrap();
+        for iface in addrs {
+            let sock = if let Some(sock) = iface.netmask {
+                sock
+            } else {
+                continue
+            };
+            if sock.family() == Some(crate::sys::socket::AddressFamily::Inet) {
+                let _ = sock.as_sockaddr_in().unwrap();
+                return;
+            }
+        }
+        panic!("No address?");
     }
 }

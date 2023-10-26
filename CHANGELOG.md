@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Added
+- Added `fanotify_init` and `fanotify_mark` wrappers for Linux.
+
 ## [0.27.1] - 2023-08-28
 
 ### Fixed

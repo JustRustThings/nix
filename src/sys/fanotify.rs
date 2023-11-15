@@ -18,94 +18,86 @@ use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::mem::{MaybeUninit, size_of};
 use std::ptr;
 
-// TODO: use libc_bitflags! once constants defined in fanotify.h are merged into
-// crate libc.
-bitflags::bitflags! {
-    #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-    #[repr(transparent)]
+libc_bitflags! {
     /// Mask for defining which events shall be listened with
     /// [`fanotify_mark`](fn.fanotify_mark.html) and for querying notifications.
     pub struct MaskFlags: u64 {
         /// File was accessed.
-        const FAN_ACCESS = 0x00000001;
+        FAN_ACCESS;
         /// File was modified.
-        const FAN_MODIFY = 0x00000002;
+        FAN_MODIFY;
         /// Metadata changed. Since Linux 5.1.
-        const FAN_ATTRIB = 0x00000004;
+        FAN_ATTRIB;
         /// Writtable file closed.
-        const FAN_CLOSE_WRITE = 0x00000008;
+        FAN_CLOSE_WRITE;
         /// Unwrittable file closed.
-        const FAN_CLOSE_NOWRITE = 0x00000010;
+        FAN_CLOSE_NOWRITE;
         /// File was opened.
-        const FAN_OPEN = 0x00000020;
+        FAN_OPEN;
         /// File was moved from X. Since Linux 5.1.
-        const FAN_MOVED_FROM = 0x00000040;
+        FAN_MOVED_FROM;
         /// File was moved to Y. Since Linux 5.1.
-        const FAN_MOVED_TO = 0x00000080;
+        FAN_MOVED_TO;
         /// Subfile was created. Since Linux 5.1.
-        const FAN_CREATE = 0x00000100;
+        FAN_CREATE;
         /// Subfile was deleted. Since Linux 5.1.
-        const FAN_DELETE = 0x00000200;
+        FAN_DELETE;
         /// Self was deleted. Since Linux 5.1.
-        const FAN_DELETE_SELF = 0x00000400;
+        FAN_DELETE_SELF;
         /// Self was moved. Since Linux 5.1.
-        const FAN_MOVE_SELF = 0x00000800;
+        FAN_MOVE_SELF;
         /// File was opened for exec. Since Linux 5.0.
-        const FAN_OPEN_EXEC = 0x00001000;
-        
+        FAN_OPEN_EXEC;
+
         /// Event queued overflowed.
-        const FAN_Q_OVERFLOW = 0x00004000;
+        FAN_Q_OVERFLOW;
         /// Filesystem error. Since Linux 5.16.
-        const FAN_FS_ERROR = 0x00008000;
-        
+        FAN_FS_ERROR;
+
         /// File open in perm check.
-        const FAN_OPEN_PERM = 0x00010000;
+        FAN_OPEN_PERM;
         /// File accessed in perm check.
-        const FAN_ACCESS_PERM = 0x00020000;
+        FAN_ACCESS_PERM;
         /// File open/exec in perm check. Since Linux 5.0.
-        const FAN_OPEN_EXEC_PERM = 0x00040000;
-        
+        FAN_OPEN_EXEC_PERM;
+
         /// Interested in child events.
-        const FAN_EVENT_ON_CHILD = 0x08000000;
-        
+        FAN_EVENT_ON_CHILD;
+
         /// File was renamed. Since Linux 5.17.
-        const FAN_RENAME = 0x10000000;
-        
+        FAN_RENAME;
+
         /// Event occured against dir.
-        const FAN_ONDIR = 0x40000000;
-        
+        FAN_ONDIR;
+
         /// Combination of `FAN_CLOSE_WRITE` and `FAN_CLOSE_NOWRITE`.
-        const FAN_CLOSE = 0x00000018;
+        FAN_CLOSE;
         /// Combination of `FAN_MOVED_FROM` and `FAN_MOVED_TO`.
-        const FAN_MOVE = 0x000000C0;
+        FAN_MOVE;
     }
 }
 
-// TODO: use libc_bitflags! once constants defined in fanotify.h are merged into
-// crate libc.
-bitflags::bitflags! {
-    #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-    #[repr(transparent)]
+libc_bitflags! {
     /// Configuration options for [`fanotify_init`](fn.fanotify_init.html).
     pub struct InitFlags: libc::c_uint {
         /// Close-on-exec flag set on the file descriptor.
-        const FAN_CLOEXEC = 0x00000001;
+        FAN_CLOEXEC;
         /// Nonblocking flag set on the file descriptor.
-        const FAN_NONBLOCK = 0x00000002;
+        FAN_NONBLOCK;
 
         /// Receipt of events notifications.
-        const FAN_CLASS_NOTIF = 0x00000000;
+        FAN_CLASS_NOTIF;
         /// Receipt of events for permission decisions, after they contain final
         /// data.
-        const FAN_CLASS_CONTENT = 0x00000004;
+        FAN_CLASS_CONTENT;
         /// Receipt of events for permission decisions, before they contain
         /// final data.
-        const FAN_CLASS_PRE_CONTENT = 0x00000008;
+        FAN_CLASS_PRE_CONTENT;
 
         /// Remove the limit of 16384 events for the event queue.
-        const FAN_UNLIMITED_QUEUE = 0x00000010;
+        FAN_UNLIMITED_QUEUE;
         /// Remove the limit of 8192 marks.
-        const FAN_UNLIMITED_MARKS = 0x00000020;
+        FAN_UNLIMITED_MARKS;
     }
 }
 
@@ -135,41 +127,37 @@ libc_bitflags! {
     }
 }
 
-// TODO: use libc_bitflags! once constants defined in fanotify.h are merged into
-// crate libc.
-::bitflags::bitflags! {
-    #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-    #[repr(transparent)]
+libc_bitflags! {
     /// Configuration options for [`fanotify_mark`](fn.fanotify_mark.html).
     pub struct MarkFlags: libc::c_uint {
         /// Add the events to the marks.
-        const FAN_MARK_ADD = 0x00000001;
+        FAN_MARK_ADD;
         /// Remove the events to the marks.
-        const FAN_MARK_REMOVE = 0x00000002;
+        FAN_MARK_REMOVE;
         /// Don't follow symlinks, mark them.
-        const FAN_MARK_DONT_FOLLOW = 0x00000004;
+        FAN_MARK_DONT_FOLLOW;
         /// Raise an error if filesystem to be marked is not a directory.
-        const FAN_MARK_ONLYDIR = 0x00000008;
+        FAN_MARK_ONLYDIR;
         /// Events added to or removed from the marks.
-        const FAN_MARK_IGNORED_MASK = 0x00000020;
+        FAN_MARK_IGNORED_MASK;
         /// Ignore mask shall survive modify events.
-        const FAN_MARK_IGNORED_SURV_MODIFY = 0x00000040;
+        FAN_MARK_IGNORED_SURV_MODIFY;
         /// Remove all marks.
-        const FAN_MARK_FLUSH = 0x00000080;
+        FAN_MARK_FLUSH;
         /// Do not pin inode object in the inode cache. Since Linux 5.19.
-        const FAN_MARK_EVICTABLE = 0x00000200;
+        FAN_MARK_EVICTABLE;
         /// Events added to or removed from the marks. Since Linux 6.0.
-        const FAN_MARK_IGNORE = 0x00000400;
-        
+        FAN_MARK_IGNORE;
+
         /// Default flag.
-        const FAN_MARK_INODE = 0x00000000;
+        FAN_MARK_INODE;
         /// Mark the mount specified by pathname.
-        const FAN_MARK_MOUNT = 0x00000010;
+        FAN_MARK_MOUNT;
         /// Mark the filesystem specified by pathname. Since Linux 4.20.
-        const FAN_MARK_FILESYSTEM = 0x00000100;
+        FAN_MARK_FILESYSTEM;
 
         /// Combination of `FAN_MARK_IGNORE` and `FAN_MARK_IGNORED_SURV_MODIFY`.
-        const FAN_MARK_IGNORE_SURV = 0x00000440;
+        FAN_MARK_IGNORE_SURV;
     }
 }
 
